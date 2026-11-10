@@ -1,0 +1,19 @@
+node_modules/
+.env
+.env.*
+!.env.example
+artifacts/
+playwright-report/
+test-results/
+allure-results/
+allure-report/
+playwright/.auth/
+*.storage.json
+storage-state*.json
+.auth/
+# Referencia local preexistente; no incluir sus datos en el piloto.
+Mejoras del Login OTP Preguntas 7.html
+drafts/*
+!drafts/.gitkeep
+.codegraph/
+.DS_Store
