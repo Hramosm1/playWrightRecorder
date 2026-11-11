@@ -1,7 +1,7 @@
 {
   "name": "mejorasqa",
   "version": "1.0.0",
-  "description": "Piloto Gestión SQA: OrangeHRM, Playwright y Allure 3 Awesome",
+  "description": "Piloto Gestión SQA: Automation Testing, Playwright y Allure 3 Awesome",
   "scripts": {
     "test": "node scripts/run.mjs",
     "test:headed": "node scripts/run.mjs --headed",
@@ -10,7 +10,7 @@
     "report:local": "node scripts/open-report.mjs",
     "typecheck": "tsc --noEmit",
     "browsers:install": "playwright install chromium",
-    "record": "playwright codegen --browser chromium --output drafts/recording.spec.ts https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+    "record": "playwright codegen --browser chromium --output drafts/recording.spec.ts https://demo.automationtesting.in/Register.html",
     "report:verify": "node scripts/verify-reports.mjs"
   },
   "keywords": [],

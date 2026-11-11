@@ -2,8 +2,8 @@
 
 ## 1. Instalación desde cero
 
-Este piloto prueba únicamente la autenticación del [demo OrangeHRM](https://opensource-demo.orangehrmlive.com/web/index.php/auth/login).
-No usar cuentas reales ni modificar registros del sitio compartido.
+Este piloto valida el [formulario de registro de Automation Testing](https://demo.automationtesting.in/Register.html).
+Usa datos ficticios. Los casos no crean cuentas ni envían formularios válidos.
 
 ### Requisitos
 
@@ -38,27 +38,13 @@ npm run browsers:install
 `npm ci` instala exactamente `package-lock.json`. Si se cambia la versión de Playwright,
 hay que volver a instalar Chromium. No usar `npm audit fix --force` automáticamente.
 
-Copiar la configuración en macOS:
+El sitio de registro está configurado por defecto y no requiere credenciales.
+Para cambiar el origen o el nombre del ambiente, usa las variables
+`REGISTRATION_BASE_URL` y `REGISTRATION_TEST_ENV` de `.env.example` en tu `.env` local.
+`REGISTRATION_BASE_URL` debe contener solo el origen, sin `/Register.html`.
+Las variables anteriores de OrangeHRM no afectan esta suite.
 
-```sh
-cp .env.example .env
-```
-
-O en Windows PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Abrir la URL de OrangeHRM en el navegador. Debajo del título **Login** se muestran
-los valores públicos **Username : …** y **Password : …**. Copiarlos a
-`DEMO_USERNAME` y `DEMO_PASSWORD` en `.env`. Mantener `BASE_URL` como el origen
-`https://opensource-demo.orangehrmlive.com`, sin la ruta de login. `TEST_ENV` es el
-nombre legible del ambiente que aparecerá en el reporte. No copiar datos del HTML de referencia.
-
-`.env` está excluido de Git; `.env.example` no contiene las credenciales.
-No compartir sesiones guardadas, trazas ni borradores con contraseñas. Las capturas
-del helper enmascaran el campo de contraseña y el texto público `Password : …`.
+`.env` está excluido de Git. Usa datos ficticios en las grabaciones y en las pruebas.
 La traza tiene capturas de pantalla desactivadas; conserva snapshots del DOM y red.
 Trace Viewer puede incluir DOM, red y valores de acciones; sus archivos son locales
 y están excluidos de Git, igual que todos los artefactos de ejecución.
@@ -80,15 +66,15 @@ npm run test:headed
 Un caso por ID (cada comando crea su propia corrida):
 
 ```sh
-npm run test:case -- AUTH-001
-npm run test:case -- AUTH-002
-npm run test:case -- AUTH-003
+npm run test:case -- REG-001
+npm run test:case -- REG-002
+npm run test:case -- REG-003
 ```
 
 Filtrar y mostrar navegador:
 
 ```sh
-npm test -- --grep AUTH-001 --headed
+npm test -- --grep REG-001 --headed
 ```
 
 El terminal imprime la carpeta completa de la corrida y los códigos de salida de
@@ -115,20 +101,19 @@ en una carpeta distinta.
 
 1. En **Testing**, abrir el panel **PLAYWRIGHT**. Seleccionar el proyecto `chromium`.
 2. Pulsar **Record new**. Se abre un navegador y se crea un borrador. Introducir la
-   URL pública de Login y realizar el flujo. El grabador crea llamadas `goto`, `fill`
+   URL pública de registro y realizar el flujo. El grabador crea llamadas `goto`, `fill`
    y `click`; no decide por sí solo el resultado de negocio.
 3. Detener la grabación y mover el borrador a `drafts/recording.spec.ts` para que no
    se ejecute junto con los casos definitivos. Si la extensión lo creó en `tests/`,
    moverlo antes de ejecutar la suite. `drafts/` no está en el descubrimiento.
 4. Para ampliar un caso, abrir su archivo, colocar el cursor en el tramo nuevo y
    pulsar **Record at cursor**. Preparar en el navegador el estado necesario para
-   ese tramo. Grabar solo las acciones que aún no tiene el POM.
-5. Pulsar **Pick locator** para inspeccionar un elemento en el navegador y copiar
-   su localizador. Preferir `getByRole`, `getByPlaceholder` y texto estable.
-   Comprobar que identifica exactamente un elemento. En este demo las etiquetas
-   Username/Password no tienen asociación accesible al input: usar sus placeholders.
-6. Reemplazar datos escritos durante la grabación por `demoCredentials()` y revisar
-   el borrador antes de copiarlo al caso definitivo. No versionar el borrador.
+   ese tramo. Copiar las acciones nuevas al bloque `run` del paso correspondiente.
+5. Usar **Pick locator** para confirmar que cada localizador identifica un solo
+   elemento. En el formulario, los campos de nombre tienen placeholders; el campo
+   de correo se identifica por `input[type="email"]`.
+6. Reemplazar los datos grabados por ejemplos ficticios antes de copiar las
+   acciones al caso definitivo. No versionar el borrador.
 
 La extensión puede presentar estas opciones en inglés aunque VS Code esté en español.
 No se ha automatizado la interacción con VS Code en esta entrega; ver el registro de validación.
@@ -142,76 +127,62 @@ npm run record
 Es equivalente a:
 
 ```sh
-npx playwright codegen --browser chromium --output drafts/recording.spec.ts https://opensource-demo.orangehrmlive.com/web/index.php/auth/login
+npx playwright codegen --browser chromium --output drafts/recording.spec.ts https://demo.automationtesting.in/Register.html
 ```
 
 Se abren el navegador y Playwright Inspector. Grabar, detener con **Record** y cerrar
 las ventanas al terminar. Si se detiene con `Ctrl+C`, comprobar que el archivo quedó
 guardado. El borrador es temporal y queda excluido de Git.
 
-## 4. Plantilla, POM y comprobaciones
+## 4. De la grabación a Allure
 
-### Operación habitual
+1. Grabar con **Record new** o **Record at cursor**.
+2. Copiar `templates/caso.template.ts` a `tests/mi-caso.spec.ts`. Editar la suite
+   en `test.describe` y el ID y nombre del caso en `test`. Conservar el import de
+   `test` desde `../support/test.js`: mantiene los metadatos del reporte.
+3. Pegar las acciones grabadas con `page` en `run`, dentro de `functionalStep`.
+   Ajustar URL, localizadores y datos ficticios. La plantilla solo pide `{ page }`.
+4. Editar `name` y `expected` para describir qué se valida. Añadir los
+   `await expect(...)` dentro de `run`, después de las acciones. Ajustar
+   `observe` para leer lo que muestra el sitio. Repetir `functionalStep` por
+   cada validación que necesite su propia captura.
+5. Ejecutar `npm run test:case -- REG-004` (usar el ID del caso nuevo).
+   Abrir `allure-report/index.html` dentro de la carpeta de corrida que imprime
+   el comando. También puedes localizarla con `artifacts/latest.json`.
+   En Allure, abrir **suite → caso → paso → Evidencia funcional**.
 
-1. Duplicar `templates/caso.template.ts` dentro de `tests/` con nombre terminado en
-   `.spec.ts`, por ejemplo `tests/login-adicional.spec.ts`. No modificar la plantilla
-   para habilitarla: queda fuera de `testDir` y no coincide con `testMatch`.
-2. Cambiar `AUTH-004`, nombre y suite. Usar un ID único. La suite se declara con
-   `test.describe`; los metadatos ID, navegador y ambiente se agregan desde `support/test.ts`.
-3. Reutilizar la fixture `login`, que entrega un `LoginPage` nuevo por test. Los tres
-   casos de `tests/auth.spec.ts` usan ese mismo objeto de página.
-4. Grabar solo lo nuevo. Si es una acción reutilizable de Login, incorporar su
-   localizador y método en `pages/login.page.ts`. Evitar un método por cada clic.
-5. Mantener las comprobaciones de negocio en el test, dentro de `functionalStep`.
-   Usar `await expect(locator).toBeVisible()`, `toHaveText`, `toHaveURL`, etc.
-   No usar `waitForTimeout` ni pausas fijas.
-6. Declarar un paso por validación funcional con nombre, `expected`, `run` y
-   `observe`. `run` incluye las acciones y aserciones. `observe` lee el estado real
-   de la aplicación y no debe devolver una copia del resultado esperado.
-7. Ejecutar el caso aislado, revisar ambos reportes y ejecutar luego la suite.
+### Antes: acciones de un borrador de registro
 
-No se creó `DashboardPage`: aquí solo se valida su URL y encabezado; no hay acciones
-reutilizables del dashboard que justifiquen otro objeto.
-
-### Antes: borrador de Codegen de OrangeHRM
-
-Fragmento representativo de la salida usando los localizadores inspeccionados; los
-valores se sustituyen por variables inmediatamente después de grabar:
+Fragmento representativo del flujo de REG-002 con datos ficticios:
 
 ```ts
-await page.goto('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login');
-await page.getByPlaceholder('Username').fill(username);
-await page.getByPlaceholder('Password').fill(password);
-await page.getByRole('button', { name: 'Login', exact: true }).click();
+await page.goto('https://demo.automationtesting.in/Register.html');
+await page.locator('input[type="email"]').fill('correo-invalido');
+await page.locator('input[type="email"]').fill('tester@example.test');
 ```
 
-### Después: test mantenible
+### Después: acciones y aserciones dentro de la plantilla
 
 ```ts
-const { username, password } = demoCredentials();
+const email = page.locator('input[type="email"]');
 await functionalStep({
   page,
-  name: 'Autenticarse y validar el dashboard',
-  expected: 'URL /dashboard/index y encabezado Dashboard visible.',
+  name: 'Validar el formato del correo',
+  expected: 'El navegador distingue un correo inválido de uno válido.',
   run: async () => {
-    await login.open();
-    await login.signIn(username, password);
-    await expect(page).toHaveURL(/\/dashboard\/index(?:[?#].*)?$/);
-    await expect(page.getByRole('heading', { name: 'Dashboard', exact: true })).toBeVisible();
+    await page.goto('/Register.html', { waitUntil: 'domcontentloaded' });
+    await email.fill('correo-invalido');
+    await expect(page.locator('input[type="email"]:invalid')).toBeVisible();
+    await email.fill('tester@example.test');
+    await expect(page.locator('input[type="email"]:valid')).toBeVisible();
   },
-  observe: async () => `URL: ${page.url()}; encabezados: ${(await page.getByRole('heading').allTextContents()).join(', ')}`,
+  observe: async () => `Correo final: ${await email.inputValue()}`,
 });
 ```
 
-Importar `demoCredentials` de `../support/environment.js`, `functionalStep` de
-`../support/functional-step.js`, y `test, expect` de `../support/test.js`.
-Los sufijos `.js` son intencionales para resolución NodeNext en TypeScript.
-
-La línea `goto` se sustituye por `login.open()`. Las tres líneas de `fill`, `fill`,
-`click` se sustituyen por `login.signIn()`, ya implementado. Sus localizadores están
-centralizados en `LoginPage`; solo agregar allí una acción si el tramo nuevo la
-necesita. La aserción del dashboard permanece en el test. No copiar la contraseña
-en el código, nombres de pasos ni resultados observados.
+`functionalStep` adjunta la captura automáticamente. El ejemplo completo está
+en `tests/register.spec.ts`. El caso valida el formato local del campo; no verifica
+la existencia de una dirección ni envía el formulario.
 
 ### Evidencias automáticas
 
@@ -269,7 +240,7 @@ abrir **Evidencia funcional** y el JSON del resultado. El estado y duración apa
 en el caso; el proyecto indica Chromium.
 
 En Allure Awesome abrir el HTML, entrar en la lista de pruebas, expandir la suite
-**OrangeHRM | Autenticación**, elegir el caso y expandir el paso funcional. Dentro
+**Automation Testing | Registro**, elegir el caso y expandir el paso funcional. Dentro
 están los adjuntos **Evidencia funcional** y **Resultado esperado y observado**.
 El caso incluye ID, nombre, estado, duración, navegador y ambiente. El resumen
 muestra totales y permite navegar al detalle. La referencia HTML entregada se usó
@@ -289,7 +260,7 @@ npm run report:verify
 También admite `npm run report:verify -- artifacts/NOMBRE-DE-CORRIDA`. Deja
 `report-verification.json` y capturas de la revisión en esa corrida. Copia el HTML
 formal a una carpeta temporal y verifica la evidencia con la red desactivada.
-Para la corrida de fallo controlado comprueba además el error `Expected: 3 / Received: 2`.
+Para una corrida fallida comprueba además que el mensaje del error sea visible.
 
 Cuando un fallo necesite más contexto que la captura, usar el adjunto **trace** del
 reporte local o ejecutar:
@@ -308,9 +279,9 @@ por `latest.json` y el registro de validación. No se acumula historial entre co
 | Síntoma | Qué hacer |
 | --- | --- |
 | `Executable doesn't exist` | Ejecutar `npm run browsers:install` después de `npm ci`. Verificar acceso a las descargas y espacio disponible. |
-| Faltan credenciales | Completar `.env` con los valores públicos actuales de Login y abrir una terminal desde la raíz del proyecto. |
+| Abre el sitio incorrecto | Revisar `REGISTRATION_BASE_URL` en `.env` y abrir una terminal desde la raíz del proyecto. |
 | El demo no carga, hay timeout, DNS o HTTP 5xx | Abrir la URL manualmente, revisar conexión y Trace Viewer. Registrar falla de entorno; no cambiar la expectativa de negocio para hacerla pasar. |
-| Cambió el demo | Confirmar textos y credenciales en la aplicación. Actualizar los localizadores compartidos en `LoginPage` y las expectativas afectadas, luego volver a ejecutar. |
+| Cambió el demo | Confirmar textos y controles en el formulario. Actualizar los localizadores y las aserciones afectadas, luego volver a ejecutar. |
 | `strict mode violation` | Usar **Pick locator**, revisar coincidencias y restringir por rol, nombre o contenedor. No ocultar ambigüedad con `.first()` sin una razón funcional. |
 | Captura ausente | Revisar el error del helper y el JSON del paso. Asegurar que la validación usa `functionalStep` y que nadie cerró `page` antes de capturar. Revisar permisos y timeout. |
 | Captura aparece fuera del paso en Allure | Mantener la API `allure.attachment` del helper y las versiones del lock. No sustituirla por `step.attach` sin volver a comprobar ambos reportes. |

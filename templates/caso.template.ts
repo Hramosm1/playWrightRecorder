@@ -2,17 +2,21 @@
 import { test, expect } from '../support/test.js';
 import { functionalStep } from '../support/functional-step.js';
 
-test.describe('OrangeHRM | Autenticación', () => {
-  test('AUTH-004 | Nombre funcional del caso', async ({ page, login }) => {
+test.describe('Automation Testing | Registro', () => {
+  test('REG-004 | Nombre funcional del caso', async ({ page }) => {
+    const heading = page.getByRole('heading', { name: 'Register', exact: true });
     await functionalStep({
       page,
-      name: 'Abrir y validar el formulario Login',
-      expected: 'El encabezado Login está visible.',
+      name: 'Abrir y validar el formulario de registro',
+      expected: 'El encabezado Register está visible.',
       run: async () => {
-        await login.open(); // Reutilizar; grabar solo acciones nuevas.
-        await expect(login.heading).toBeVisible(); // Comprobación de negocio en test.
+        // Pegar aquí las acciones grabadas con page. Ajustar URL, localizadores y datos.
+        await page.goto('/Register.html');
+
+        // Agregar aquí las aserciones que determinan si el paso pasa.
+        await expect(heading).toBeVisible();
       },
-      observe: async () => `URL: ${page.url()}; Login visible: ${await login.heading.isVisible()}`,
+      observe: async () => `URL: ${page.url()}; Register visible: ${await heading.isVisible()}`,
     }); // Captura automática, también si falla la aserción.
   });
 });

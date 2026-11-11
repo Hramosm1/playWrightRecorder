@@ -1,7 +1,7 @@
 # Gestión SQA · piloto web
 
-OrangeHRM público, TypeScript, Playwright Test, Chromium y Allure Report 3 Awesome.
-Tres casos independientes de autenticación, sin modificar registros. Azure DevOps queda para una fase posterior.
+Automation Testing público, TypeScript, Playwright Test, Chromium y Allure Report 3 Awesome.
+Tres casos independientes del formulario de registro: campos requeridos, formato de correo y selección de pasatiempos. No se crean cuentas. Azure DevOps queda para una fase posterior.
 
 ## Arranque rápido
 
@@ -12,12 +12,12 @@ npm ci
 npm run browsers:install
 ```
 
-Copiar `.env.example` a `.env` y completar los dos valores públicos que aparecen en Login.
+El [sitio de registro](https://demo.automationtesting.in/Register.html) está configurado por defecto y no requiere credenciales.
 
 ```sh
 npm test
 npm run test:headed
-npm run test:case -- AUTH-002
+npm run test:case -- REG-002
 npm run report:formal
 npm run report:local
 ```
@@ -26,13 +26,13 @@ Cada `npm test` genera ambos reportes, incluso con fallos. `artifacts/latest.jso
 la última carpeta: `playwright-report/index.html` para revisión local y
 `allure-report/index.html` para compartir como HTML autónomo.
 
-- [Manual del tester](docs/manual-tester.md): instalación, grabación, plantilla, POM y reporte.
-- [Validación de entrega](docs/validacion.md): resultados reales, fallo controlado y limitaciones.
+- [Manual del tester](docs/manual-tester.md): instalación, grabación, plantilla y reporte.
+- [Validación histórica del piloto OrangeHRM](docs/validacion.md): resultados reales, fallo controlado y limitaciones.
 - `templates/caso.template.ts`: copiar a `tests/nombre.spec.ts` para habilitar un caso nuevo.
 - `npm run typecheck`: validación estática completa del piloto.
 - `npm run report:verify`: comprueba adjuntos y abre ambos reportes con Chromium;
   copia solo el HTML formal a una carpeta temporal y carga su imagen sin red.
 
-La operación habitual es duplicar la plantilla, reutilizar acciones, grabar solo el tramo
-nuevo y escribir las comprobaciones. Las capturas se toman automáticamente por validación
-funcional mediante `support/functional-step.ts`.
+La operación habitual es grabar, pegar las acciones con `page` en la plantilla,
+añadir aserciones dentro de `functionalStep` y ejecutar el caso. El helper adjunta
+la captura al paso en Allure. REG-002 muestra este flujo sin Page Objects.

@@ -29,6 +29,12 @@ for (const result of results) {
   }
 }
 
+function errorSummary(result) {
+  const message = result.statusDetails?.message?.split('\n').find(line => line.trim());
+  assert.ok(message, `${result.name}: falta el mensaje de error`);
+  return message.trim();
+}
+
 // Solo copiar el HTML: ninguna imagen, resultado o JS externo está disponible.
 const copyDir = await mkdtemp(join(tmpdir(), 'gestion-sqa-report-'));
 const copyHTML = join(copyDir, 'index.html');
@@ -41,7 +47,9 @@ try {
   const page = await context.newPage();
   for (const result of results) {
     await page.goto(pathToFileURL(copyHTML).href);
-    const suite = page.getByText('OrangeHRM | Autenticación', { exact: true });
+    const suiteName = result.labels.find(label => label.name === 'suite')?.value;
+    assert.ok(suiteName, `${result.name}: falta etiqueta de suite`);
+    const suite = page.getByText(suiteName, { exact: true });
     await expect(suite).toBeVisible();
     const caseRow = page.getByText(result.name, { exact: true });
     // Awesome expande automáticamente suites que contienen fallos.
@@ -53,8 +61,7 @@ try {
     await expect(page.locator('img').first()).toBeVisible();
     await expect.poll(() => page.locator('img').first().evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
     if (result.status === 'failed') {
-      await expect(page.locator('body')).toContainText('Expected: 3');
-      await expect(page.locator('body')).toContainText('Received: 2');
+      await expect(page.locator('body')).toContainText(errorSummary(result));
     }
     const id = result.name.split(' | ')[0];
     await page.screenshot({ path: join(runDir, `allure-${id}-verified.png`), fullPage: true });
@@ -93,7 +100,7 @@ try {
     const response = await native.request.get(new URL(imageURL, url).href);
     assert.equal(response.status(), 200);
     assert.ok(response.headers()['content-type'].includes('image/png'));
-    if (result.status === 'failed') await expect(native.locator('body')).toContainText('Expected: 3');
+    if (result.status === 'failed') await expect(native.locator('body')).toContainText(errorSummary(result));
     await native.screenshot({ path: join(runDir, `playwright-${result.name.split(' | ')[0]}-verified.png`), fullPage: true });
   }
   const verification = { runDir, copyDir, verifiedAt: new Date().toISOString(), uiChecks, nativeStepsAndImages: true };
