@@ -32,6 +32,7 @@ En **Terminal → New Terminal**, situado en la raíz (donde está `package.json
 
 ```sh
 npm ci
+$env:NODE_TLS_REJECT_UNAUTHORIZED="0"
 npm run browsers:install
 ```
 
